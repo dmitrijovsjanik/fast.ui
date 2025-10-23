@@ -12,6 +12,7 @@ const bgColorHex = document.getElementById('bgColorHex');
 const output = document.getElementById('output');
 const scalesContainer = document.getElementById('scalesContainer');
 const themeBtns = document.querySelectorAll('.theme-btn');
+const copySvgBtn = document.getElementById('copySvgBtn');
 const exportSvgBtn = document.getElementById('exportSvgBtn');
 
 let currentTheme = 'light';
@@ -171,57 +172,131 @@ function applyThemeToUI(theme) {
 }
 
 /**
- * Export all generated colors as SVG
- * Creates a 12x6 grid of 128px squares with 8px gaps
- * Each square is named for easy identification in Figma
+ * Generate SVG string with all color scales
+ * Includes both light and dark themes, solid and alpha modes
+ * Format: [theme]/[color]/[mode]/[scale]
+ * @returns {string} SVG string
  */
-function exportSVG() {
-  if (!currentThemeData) {
-    alert('Please generate a color palette first');
-    return;
-  }
+function generateSVG() {
+  const brandColor = brandColorHex.value;
+  const background = bgColorHex.value;
+
+  // Generate both light and dark themes
+  const lightTheme = generateThemeColors({
+    appearance: 'light',
+    accentColor: brandColor,
+    brandColor: brandColor,
+    grayColor: null,
+    background: '#ffffff',
+  });
+
+  const darkTheme = generateThemeColors({
+    appearance: 'dark',
+    accentColor: brandColor,
+    brandColor: brandColor,
+    grayColor: null,
+    background: '#111111',
+  });
 
   const squareSize = 128;
   const gap = 8;
-  const cols = 12;
-  const rows = 6;
+  const cols = 12; // 12 steps in each scale
+  const rows = 24; // 6 colors × 2 modes × 2 themes = 24 rows
 
   // Calculate total SVG dimensions
   const svgWidth = cols * squareSize + (cols - 1) * gap;
   const svgHeight = rows * squareSize + (rows - 1) * gap;
 
-  // Color scales to export
-  const scales = [
-    { name: 'Brand', data: currentThemeData.brand },
-    { name: 'Success', data: currentThemeData.success },
-    { name: 'Warning', data: currentThemeData.warning },
-    { name: 'Error', data: currentThemeData.error },
-    { name: 'Info', data: currentThemeData.info },
-    { name: 'Gray', data: currentThemeData.gray },
-  ];
-
   // Start SVG
   let svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">
-  <title>Fast UI Color Palette</title>
+  <title>Fast UI Color Palette - All Variants</title>
 `;
 
-  // Generate rectangles
-  scales.forEach((scale, rowIndex) => {
-    scale.data.scaleAlpha.forEach((color, colIndex) => {
-      const x = colIndex * (squareSize + gap);
-      const y = rowIndex * (squareSize + gap);
-      const stepNumber = colIndex + 1;
-      const name = `${scale.name}-${stepNumber}`;
+  let currentRow = 0;
 
-      svg += `  <rect id="${name}" x="${x}" y="${y}" width="${squareSize}" height="${squareSize}" fill="${color}">
-    <title>${name}: ${color}</title>
+  // Process both themes
+  [
+    { theme: 'light', data: lightTheme },
+    { theme: 'dark', data: darkTheme }
+  ].forEach(({ theme, data }) => {
+
+    // Color scales to export (Gray is called "neutral" in export)
+    const colorScales = [
+      { name: 'brand', data: data.brand },
+      { name: 'neutral', data: data.gray },
+      { name: 'success', data: data.success },
+      { name: 'warning', data: data.warning },
+      { name: 'error', data: data.error },
+      { name: 'info', data: data.info },
+    ];
+
+    // Process each color
+    colorScales.forEach(({ name, data }) => {
+
+      // Process both modes: solid and alpha
+      [
+        { mode: 'solid', colors: data.scale },
+        { mode: 'alpha', colors: data.scaleAlpha }
+      ].forEach(({ mode, colors }) => {
+
+        // Generate 12 squares for this row
+        colors.forEach((color, colIndex) => {
+          const x = colIndex * (squareSize + gap);
+          const y = currentRow * (squareSize + gap);
+          const stepNumber = colIndex + 1;
+          const id = `${theme}/${name}/${mode}/${stepNumber}`;
+
+          svg += `  <rect id="${id}" x="${x}" y="${y}" width="${squareSize}" height="${squareSize}" fill="${color}">
+    <title>${id}: ${color}</title>
   </rect>
 `;
+        });
+
+        currentRow++;
+      });
     });
   });
 
   svg += `</svg>`;
+  return svg;
+}
+
+/**
+ * Copy SVG to clipboard
+ */
+async function copySVG() {
+  const svg = generateSVG();
+
+  if (!svg) {
+    alert('Please generate a color palette first');
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(svg);
+    // Visual feedback
+    const originalText = copySvgBtn.textContent;
+    copySvgBtn.textContent = 'Copied!';
+    setTimeout(() => {
+      copySvgBtn.textContent = originalText;
+    }, 2000);
+  } catch (error) {
+    console.error('Failed to copy SVG:', error);
+    alert('Failed to copy SVG to clipboard');
+  }
+}
+
+/**
+ * Export SVG as downloadable file
+ */
+function exportSVG() {
+  const svg = generateSVG();
+
+  if (!svg) {
+    alert('Please generate a color palette first');
+    return;
+  }
 
   // Download SVG file
   const blob = new Blob([svg], { type: 'image/svg+xml' });
@@ -235,7 +310,8 @@ function exportSVG() {
   URL.revokeObjectURL(url);
 }
 
-// Export SVG button handler
+// Button handlers
+copySvgBtn.addEventListener('click', copySVG);
 exportSvgBtn.addEventListener('click', exportSVG);
 
 // Generate default palette on load
