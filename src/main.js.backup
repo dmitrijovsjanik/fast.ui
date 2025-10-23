@@ -1,0 +1,102 @@
+/**
+ * Main UI Logic for Fast UI Color Generator
+ */
+
+import { generatePaletteFromBrand } from './index.js';
+
+// DOM Elements
+const colorInput = document.getElementById('brandColorInput');
+const hexInput = document.getElementById('brandColorHex');
+const generateBtn = document.getElementById('generateBtn');
+const output = document.getElementById('output');
+const semanticGrid = document.getElementById('semanticGrid');
+const scalesContainer = document.getElementById('scalesContainer');
+const themeBtns = document.querySelectorAll('.theme-btn');
+
+let currentTheme = 'light';
+
+// Sync color picker with text input
+colorInput.addEventListener('input', (e) => {
+  hexInput.value = e.target.value.toUpperCase();
+});
+
+hexInput.addEventListener('input', (e) => {
+  const value = e.target.value;
+  if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+    colorInput.value = value;
+  }
+});
+
+// Theme toggle
+themeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    themeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTheme = btn.dataset.theme;
+    if (output.style.display === 'block') {
+      generate();
+    }
+  });
+});
+
+// Generate button
+generateBtn.addEventListener('click', generate);
+
+function generate() {
+  const brandColor = hexInput.value;
+
+  try {
+    const result = generatePaletteFromBrand(brandColor, { theme: currentTheme });
+    displayResults(result);
+    output.style.display = 'block';
+  } catch (error) {
+    console.error('Generation error:', error);
+    alert('Error: ' + error.message);
+  }
+}
+
+function displayResults(result) {
+  const { semanticColors, palette } = result;
+
+  // Display semantic colors
+  semanticGrid.innerHTML = Object.entries(semanticColors).map(([name, color]) => `
+    <div class="semantic-item">
+      <div class="semantic-swatch" style="background: ${color}"></div>
+      <div class="semantic-label">${name}</div>
+      <div class="semantic-hex">${color}</div>
+    </div>
+  `).join('');
+
+  // Display scales
+  scalesContainer.innerHTML = Object.entries(palette).map(([name, data]) => `
+    <div class="scale-section">
+      <h3 class="scale-title">${name}</h3>
+
+      <h4>Scale</h4>
+      <div class="scale-grid">
+        ${data.scale.map((color, index) => `
+          <div class="scale-step" style="background: ${color}" title="${color}">
+            <span class="scale-step-number">${index + 1}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="scale-labels">
+        ${['Bg 1', 'Bg 2', 'UI', 'Hover', 'Active', 'Border', 'Focus', 'Strong', 'Solid', 'Hover', 'Text Lo', 'Text Hi'].map(label => `
+          <div>${label}</div>
+        `).join('')}
+      </div>
+
+      <h4 style="margin-top: 1.5rem;">Alpha (Transparent)</h4>
+      <div class="scale-grid">
+        ${data.alpha.map((color, index) => `
+          <div class="scale-step" style="background: ${color}" title="${color}">
+            <span class="scale-step-number">${index + 1}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// Generate default palette on load
+generate();

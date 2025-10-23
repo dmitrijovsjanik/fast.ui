@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Palette Generator - Fast UI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg-color, #ffffff);
+      color: var(--text-color, #111111);
+      transition: background-color 0.3s, color 0.3s;
+      min-height: 100vh;
+    }
+
+    body.dark {
+      --bg-color: #111111;
+      --text-color: #eeeeee;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    .controls {
+      background: var(--card-bg, white);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    body.dark .controls {
+      --card-bg: #1a1a1a;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .control-row {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .color-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .color-input-group label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .color-input-wrapper {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .color-picker {
+      width: 60px;
+      height: 60px;
+      border: 2px solid var(--border-color, #ddd);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    body.dark .color-picker {
+      --border-color: #444;
+    }
+
+    .color-text {
+      font-size: 1.1rem;
+      padding: 0.5rem 0.75rem;
+      border: 2px solid var(--border-color, #ddd);
+      border-radius: 8px;
+      width: 120px;
+      font-family: 'Courier New', monospace;
+      background: var(--input-bg, white);
+      color: var(--text-color, #111);
+    }
+
+    body.dark .color-text {
+      --input-bg: #222;
+      --border-color: #444;
+    }
+
+    .theme-toggle {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .theme-toggle button {
+      background: var(--btn-bg, #eee);
+      color: var(--btn-color, #333);
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    body.dark .theme-toggle button {
+      --btn-bg: #333;
+      --btn-color: #eee;
+    }
+
+    .theme-toggle button.active {
+      background: #3D63DD;
+      color: white;
+    }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    button.primary {
+      background: #3D63DD;
+      color: white;
+      padding: 0.75rem 2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-weight: 600;
+    }
+
+    button.primary:hover {
+      background: #2952CC;
+    }
+
+    button.secondary {
+      background: var(--btn-bg, #eee);
+      color: var(--btn-color, #333);
+      padding: 0.75rem 2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    body.dark button.secondary {
+      --btn-bg: #333;
+      --btn-color: #eee;
+    }
+
+    button.secondary:hover {
+      opacity: 0.8;
+    }
+
+    .output {
+      display: none;
+    }
+
+    .output.visible {
+      display: block;
+    }
+
+    .scale-section {
+      background: var(--card-bg, white);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    body.dark .scale-section {
+      --card-bg: #1a1a1a;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .scale-title {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      text-transform: capitalize;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .scale-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .scale-step {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.1);
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .scale-step:hover {
+      transform: scale(1.15);
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .scale-step-number {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      background: rgba(255,255,255,0.9);
+      color: #111;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .scale-labels {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: #888;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+    }
+
+    .css-output {
+      background: var(--card-bg, white);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-top: 2rem;
+    }
+
+    body.dark .css-output {
+      --card-bg: #1a1a1a;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .css-code {
+      background: #f5f5f5;
+      padding: 1.5rem;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+      color: #111;
+    }
+
+    body.dark .css-code {
+      background: #0d0d0d;
+      color: #eee;
+    }
+
+    .copy-notification {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      background: #10b981;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .copy-notification.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .scale-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+      .scale-labels {
+        grid-template-columns: repeat(6, 1fr);
+      }
+      .control-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Custom Palette Generator</h1>
+      <p class="subtitle">Advanced Radix UI Color Algorithm</p>
+    </header>
+
+    <div class="controls">
+      <div class="control-row">
+        <div class="color-input-group">
+          <label>Accent Color</label>
+          <div class="color-input-wrapper">
+            <input type="color" class="color-picker" id="accentColor" value="#3D63DD">
+            <input type="text" class="color-text" id="accentHex" value="#3D63DD">
+          </div>
+        </div>
+
+        <div class="color-input-group">
+          <label>Gray Color</label>
+          <div class="color-input-wrapper">
+            <input type="color" class="color-picker" id="grayColor" value="#8B8D98">
+            <input type="text" class="color-text" id="grayHex" value="#8B8D98">
+          </div>
+        </div>
+
+        <div class="color-input-group">
+          <label>Background</label>
+          <div class="color-input-wrapper">
+            <input type="color" class="color-picker" id="bgColor" value="#FFFFFF">
+            <input type="text" class="color-text" id="bgHex" value="#FFFFFF">
+          </div>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="theme-toggle">
+          <span>Appearance:</span>
+          <button class="theme-btn active" data-theme="light">Light</button>
+          <button class="theme-btn" data-theme="dark">Dark</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="generateBtn">Generate Palette</button>
+        <button class="secondary" id="copyBtn">Copy CSS</button>
+      </div>
+    </div>
+
+    <div class="output" id="output">
+      <div class="scale-section">
+        <h2 class="scale-title">Accent Scale</h2>
+        <div class="scale-grid" id="accentScale"></div>
+        <div class="scale-labels" id="accentLabels"></div>
+      </div>
+
+      <div class="scale-section">
+        <h2 class="scale-title">Gray Scale</h2>
+        <div class="scale-grid" id="grayScale"></div>
+        <div class="scale-labels" id="grayLabels"></div>
+      </div>
+
+      <div class="css-output">
+        <h2 class="scale-title">CSS Variables</h2>
+        <div class="css-code" id="cssCode"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="copy-notification" id="copyNotification">
+    Copied to clipboard!
+  </div>
+
+  <script type="module">
+    import { generateRadixColors } from './src/core/generateRadixColors.js';
+
+    let currentTheme = 'light';
+    let currentResult = null;
+
+    // Color input sync
+    function setupColorSync(colorId, hexId) {
+      const colorInput = document.getElementById(colorId);
+      const hexInput = document.getElementById(hexId);
+
+      colorInput.addEventListener('input', (e) => {
+        hexInput.value = e.target.value.toUpperCase();
+      });
+
+      hexInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+          colorInput.value = value;
+        }
+      });
+    }
+
+    setupColorSync('accentColor', 'accentHex');
+    setupColorSync('grayColor', 'grayHex');
+    setupColorSync('bgColor', 'bgHex');
+
+    // Theme toggle
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTheme = btn.dataset.theme;
+        document.body.classList.toggle('dark', currentTheme === 'dark');
+
+        // Update background color input default
+        if (currentTheme === 'dark') {
+          if (document.getElementById('bgHex').value === '#FFFFFF') {
+            document.getElementById('bgColor').value = '#111111';
+            document.getElementById('bgHex').value = '#111111';
+          }
+        } else {
+          if (document.getElementById('bgHex').value === '#111111') {
+            document.getElementById('bgColor').value = '#FFFFFF';
+            document.getElementById('bgHex').value = '#FFFFFF';
+          }
+        }
+
+        // Regenerate if already generated
+        if (currentResult) {
+          generatePalette();
+        }
+      });
+    });
+
+    // Generate palette
+    function generatePalette() {
+      try {
+        const result = generateRadixColors({
+          appearance: currentTheme,
+          accent: document.getElementById('accentHex').value,
+          gray: document.getElementById('grayHex').value,
+          background: document.getElementById('bgHex').value,
+        });
+
+        currentResult = result;
+        renderPalette(result);
+        document.getElementById('output').classList.add('visible');
+      } catch (error) {
+        console.error('Error generating palette:', error);
+        alert('Error generating palette. Please check your color values.');
+      }
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', generatePalette);
+
+    // Render palette
+    function renderPalette(result) {
+      // Render accent scale
+      const accentScale = document.getElementById('accentScale');
+      const accentLabels = document.getElementById('accentLabels');
+      accentScale.innerHTML = '';
+      accentLabels.innerHTML = '';
+
+      result.accentScale.forEach((color, i) => {
+        const step = document.createElement('div');
+        step.className = 'scale-step';
+        step.style.backgroundColor = color;
+        step.title = color;
+        step.addEventListener('click', () => copyToClipboard(color));
+
+        const number = document.createElement('div');
+        number.className = 'scale-step-number';
+        number.textContent = i + 1;
+        step.appendChild(number);
+
+        accentScale.appendChild(step);
+
+        const label = document.createElement('div');
+        label.textContent = color.slice(0, 7);
+        accentLabels.appendChild(label);
+      });
+
+      // Render gray scale
+      const grayScale = document.getElementById('grayScale');
+      const grayLabels = document.getElementById('grayLabels');
+      grayScale.innerHTML = '';
+      grayLabels.innerHTML = '';
+
+      result.grayScale.forEach((color, i) => {
+        const step = document.createElement('div');
+        step.className = 'scale-step';
+        step.style.backgroundColor = color;
+        step.title = color;
+        step.addEventListener('click', () => copyToClipboard(color));
+
+        const number = document.createElement('div');
+        number.className = 'scale-step-number';
+        number.textContent = i + 1;
+        step.appendChild(number);
+
+        grayScale.appendChild(step);
+
+        const label = document.createElement('div');
+        label.textContent = color.slice(0, 7);
+        grayLabels.appendChild(label);
+      });
+
+      // Render CSS
+      renderCSS(result);
+    }
+
+    function renderCSS(result) {
+      const css = generateCSS(result);
+      document.getElementById('cssCode').textContent = css;
+    }
+
+    function generateCSS(result) {
+      let css = ':root {\n';
+      css += '  /* Accent Scale */\n';
+      result.accentScale.forEach((color, i) => {
+        css += `  --accent-${i + 1}: ${color};\n`;
+      });
+      css += '\n  /* Accent Alpha Scale */\n';
+      result.accentScaleAlpha.forEach((color, i) => {
+        css += `  --accent-a${i + 1}: ${color};\n`;
+      });
+      css += '\n  /* Gray Scale */\n';
+      result.grayScale.forEach((color, i) => {
+        css += `  --gray-${i + 1}: ${color};\n`;
+      });
+      css += '\n  /* Gray Alpha Scale */\n';
+      result.grayScaleAlpha.forEach((color, i) => {
+        css += `  --gray-a${i + 1}: ${color};\n`;
+      });
+      css += '\n  /* Surface Colors */\n';
+      css += `  --accent-surface: ${result.accentSurface};\n`;
+      css += `  --gray-surface: ${result.graySurface};\n`;
+      css += `  --background: ${result.background};\n`;
+      css += `  --accent-contrast: ${result.accentContrast};\n`;
+      css += '}\n';
+      return css;
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showNotification();
+      });
+    }
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      if (currentResult) {
+        const css = generateCSS(currentResult);
+        navigator.clipboard.writeText(css).then(() => {
+          showNotification();
+        });
+      }
+    });
+
+    function showNotification() {
+      const notification = document.getElementById('copyNotification');
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 2000);
+    }
+
+    // Auto-generate on load
+    generatePalette();
+  </script>
+</body>
+</html>

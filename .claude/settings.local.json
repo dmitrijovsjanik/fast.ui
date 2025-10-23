@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "Bash(start http://localhost:5173)",
+      "Bash(if [ -d \"node_modules/.vite\" ])",
+      "Bash(then rm -rf node_modules/.vite)",
+      "Bash(fi)",
+      "Bash(node debug_step8.js:*)",
+      "Bash(node:*)",
+      "Bash(dir:*)",
+      "Bash(xargs ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:custom:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

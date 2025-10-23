@@ -1,0 +1,136 @@
+# Claude Configuration for Fast UI Color Generator
+
+## Project Overview
+
+Fast UI Color Generator - сервис автоматической генерации цветовых палитр для дизайн-систем.
+
+### Основная логика проекта:
+
+1. **Input**: Брендовый цвет (HEX/HSL)
+2. **Color Derivation**: Автоматический подбор цветов статусов (алгоритм из A Nice Red)
+3. **Scale Generation**: Создание 12-ступенчатых цветовых шкал (Radix UI)
+4. **Output**: CSS Variables, JSON, Tailwind Config
+
+## Алгоритмы
+
+### A Nice Red Algorithm (Color Derivation)
+
+Для каждого семантического цвета подбираются HSL значения на основе брендового цвета:
+
+**Success (Green)**:
+- H: 80-130° (зависит от диапазона брендового H)
+- S: primaryS - 5, диапазон 55-70%
+- L: primaryL + 5, диапазон 45-60%
+
+**Warning (Amber)**:
+- H: 38-42° (зависит от диапазона брендового H)
+- S: primaryS + 5, диапазон 80-100%
+- L: primaryL + 15, диапазон 55-65%
+
+**Error (Red)**:
+- H: 0-10° (зависит от диапазона брендового H)
+- S: 75-85%
+- L: primaryL + 5, диапазон 45-55%
+
+**Neutrals (Gray)**:
+- H: 200-220° (зависит от диапазона брендового H)
+- S: 15%
+- L: 30% для Dark Gray
+
+### Radix UI Scale Structure
+
+12-ступенчатая шкала для каждого цвета:
+- Steps 1-2: App backgrounds
+- Steps 3-5: Component backgrounds (normal/hover/pressed)
+- Steps 6-8: Borders (subtle/interactive/focus)
+- Steps 9-10: Solid backgrounds (normal/hover)
+- Steps 11-12: Text (low/high contrast)
+
+## Структура файлов
+
+```
+/src
+  /core
+    colorDerivation.js    - Генерация Success, Warning, Error, Neutrals
+    scaleGenerator.js     - Создание 12-ступенчатых шкал
+    colorUtils.js         - Утилиты для работы с цветами
+  /ui
+    ColorPicker.js        - Компонент выбора брендового цвета
+    PalettePreview.js     - Визуализация палитры
+  /export
+    cssExport.js          - Экспорт в CSS Variables
+    jsonExport.js         - Экспорт в JSON
+    tailwindExport.js     - Экспорт в Tailwind Config
+
+/Ref
+  /A Nice Red            - Референсные алгоритмы подбора цветов
+```
+
+## Dependencies
+
+Core библиотеки для работы с цветом:
+- `color-convert` - конвертация между цветовыми форматами
+- `colorjs.io` - работа с цветовыми пространствами (для Radix UI)
+- `radix-theme-generator` (опционально) - готовая библиотека от Radix UI
+
+## Технические детали
+
+### Формат данных палитры
+
+```typescript
+interface ColorScale {
+  light: string[];      // 12 цветов для светлой темы
+  dark: string[];       // 12 цветов для темной темы
+  alpha: string[];      // 12 цветов с прозрачностью
+  wideGamut?: string[]; // Display P3 версии (опционально)
+}
+
+interface GeneratedPalette {
+  brand: ColorScale;
+  success: ColorScale;
+  warning: ColorScale;
+  error: ColorScale;
+  neutral: ColorScale;
+}
+```
+
+### Экспорт форматы
+
+**CSS Variables**:
+```css
+:root {
+  --color-brand-1: #...;
+  --color-brand-2: #...;
+  /* ... */
+  --color-brand-12: #...;
+}
+```
+
+**JSON**:
+```json
+{
+  "brand": {
+    "light": ["#...", "#...", ...],
+    "dark": ["#...", "#...", ...]
+  }
+}
+```
+
+## Development Guidelines
+
+1. Используй TypeScript для type safety
+2. Все цветовые функции должны работать с HSL как основным форматом
+3. Поддерживай светлую и темную темы одновременно
+4. Генерация должна быть детерминированной (одинаковый вход = одинаковый выход)
+5. Валидируй контрастность по APCA стандарту
+
+## Roadmap
+
+Текущие задачи см. в README.md
+
+## Полезные ссылки
+
+- Radix UI Colors: https://www.radix-ui.com/colors
+- Radix Theme Generator: https://github.com/digitaljohn/radix-theme-generator
+- APCA Contrast: https://github.com/Myndex/SAPC-APCA
+- Color.js: https://colorjs.io/
