@@ -14,8 +14,9 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       padding: 2rem;
-      background: #f5f5f5;
-      color: #333;
+      background: var(--color-bg-app, #f5f5f5);
+      color: var(--color-text-high, #333);
+      transition: background 0.3s, color 0.3s;
     }
 
     .container {
@@ -33,16 +34,18 @@
     }
 
     .subtitle {
-      color: #666;
+      color: var(--color-text-low, #666);
       font-size: 1.1rem;
     }
 
     .controls {
-      background: white;
+      background: var(--color-bg-pure, white);
       padding: 2rem;
       border-radius: 12px;
+      border: 1px solid var(--color-border-ui, transparent);
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       margin-bottom: 2rem;
+      transition: background 0.3s, border-color 0.3s;
     }
 
     .control-group {
@@ -61,22 +64,40 @@
     input[type="color"] {
       width: 60px;
       height: 60px;
-      border: 3px solid #ddd;
+      border: 3px solid var(--color-border-ui, #ddd);
       border-radius: 8px;
       cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    input[type="color"]:hover {
+      border-color: var(--color-border-hover, #bbb);
     }
 
     input[type="text"] {
       font-size: 1rem;
       padding: 0.5rem 1rem;
-      border: 2px solid #ddd;
+      border: 2px solid var(--color-border-ui, #ddd);
       border-radius: 8px;
       width: 120px;
       font-family: 'Courier New', monospace;
+      background: var(--color-bg-pure, white);
+      color: var(--color-text-high, #333);
+      transition: background 0.3s, border-color 0.3s, color 0.3s;
+    }
+
+    input[type="text"]:hover {
+      border-color: var(--color-border-hover, #bbb);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--color-brand-border, #3D63DD);
+      background: var(--color-bg-pure, white);
     }
 
     button {
-      background: #3D63DD;
+      background: var(--color-brand-solid, #3D63DD);
       color: white;
       padding: 0.75rem 2rem;
       border: none;
@@ -87,7 +108,7 @@
     }
 
     button:hover {
-      background: #2952CC;
+      background: var(--color-brand-solid-hover, #2952CC);
     }
 
     .theme-toggle {
@@ -96,13 +117,23 @@
     }
 
     .theme-toggle button {
-      background: #eee;
-      color: #333;
+      background: var(--color-bg-hover, #eee);
+      color: var(--color-text-high, #333);
+      border: 1px solid var(--color-border-ui, transparent);
+    }
+
+    .theme-toggle button:hover {
+      background: var(--color-bg-active, #ddd);
     }
 
     .theme-toggle button.active {
-      background: #3D63DD;
+      background: var(--color-brand-solid, #3D63DD);
       color: white;
+      border-color: var(--color-brand-solid, #3D63DD);
+    }
+
+    .theme-toggle button.active:hover {
+      background: var(--color-brand-solid-hover, #2952CC);
     }
 
     .scales-container {
@@ -111,21 +142,24 @@
     }
 
     .scale-section {
-      background: white;
+      background: var(--color-bg-pure, white);
       padding: 2rem;
       border-radius: 12px;
+      border: 1px solid var(--color-border-ui, transparent);
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: background 0.3s, border-color 0.3s;
     }
 
     .scale-title {
       font-size: 1.5rem;
       margin-bottom: 1rem;
       text-transform: capitalize;
+      color: var(--color-text-high, #333);
     }
 
     .scale-grid {
       display: grid;
-      grid-template-columns: repeat(11, 1fr);
+      grid-template-columns: repeat(12, 1fr);
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
@@ -133,10 +167,10 @@
     .scale-step {
       aspect-ratio: 1;
       border-radius: 8px;
-      border: 1px solid rgba(0,0,0,0.1);
+      border: 1px solid var(--color-border-subtle, rgba(0,0,0,0.1));
       position: relative;
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .scale-step:hover {
@@ -149,7 +183,8 @@
       position: absolute;
       bottom: 2px;
       right: 2px;
-      background: rgba(255,255,255,0.8);
+      background: var(--color-bg-pure, rgba(255,255,255,0.8));
+      color: var(--color-text-high, #000);
       padding: 1px 4px;
       border-radius: 4px;
       font-size: 0.75rem;
@@ -158,10 +193,10 @@
 
     .scale-labels {
       display: grid;
-      grid-template-columns: repeat(11, 1fr);
+      grid-template-columns: repeat(12, 1fr);
       gap: 0.5rem;
       font-size: 0.75rem;
-      color: #666;
+      color: var(--color-text-low, #666);
       text-align: center;
     }
 
@@ -177,6 +212,10 @@
         grid-template-columns: repeat(6, 1fr);
       }
     }
+
+    label {
+      color: var(--color-text-high, #333);
+    }
   </style>
 </head>
 <body>
@@ -188,10 +227,20 @@
 
     <div class="controls">
       <div class="control-group">
+        <label style="font-weight: 600; min-width: 100px;">Brand Color:</label>
         <div class="color-input-wrapper">
           <input type="color" id="brandColorInput" value="#3b82f6">
           <input type="text" id="brandColorHex" value="#3b82f6" pattern="^#[0-9A-Fa-f]{6}$">
         </div>
+      </div>
+      <div class="control-group">
+        <label style="font-weight: 600; min-width: 100px;">Background:</label>
+        <div class="color-input-wrapper">
+          <input type="color" id="bgColorInput" value="#ffffff">
+          <input type="text" id="bgColorHex" value="#ffffff" pattern="^#[0-9A-Fa-f]{6}$">
+        </div>
+      </div>
+      <div class="control-group">
         <div class="theme-toggle">
           <button class="theme-btn active" data-theme="light">Light</button>
           <button class="theme-btn" data-theme="dark">Dark</button>
