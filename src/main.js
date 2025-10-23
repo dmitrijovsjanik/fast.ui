@@ -12,8 +12,10 @@ const bgColorHex = document.getElementById('bgColorHex');
 const output = document.getElementById('output');
 const scalesContainer = document.getElementById('scalesContainer');
 const themeBtns = document.querySelectorAll('.theme-btn');
+const exportSvgBtn = document.getElementById('exportSvgBtn');
 
 let currentTheme = 'light';
+let currentThemeData = null;
 
 // Sync brand color picker with text input and auto-generate
 brandColorInput.addEventListener('input', (e) => {
@@ -72,6 +74,7 @@ function generate() {
       background,
     });
 
+    currentThemeData = theme;
     displayResults(theme);
     applyThemeToUI(theme);
     output.style.display = 'block';
@@ -166,6 +169,74 @@ function applyThemeToUI(theme) {
   document.body.style.background = gray[1];
   document.body.style.color = gray[11];
 }
+
+/**
+ * Export all generated colors as SVG
+ * Creates a 12x6 grid of 128px squares with 8px gaps
+ * Each square is named for easy identification in Figma
+ */
+function exportSVG() {
+  if (!currentThemeData) {
+    alert('Please generate a color palette first');
+    return;
+  }
+
+  const squareSize = 128;
+  const gap = 8;
+  const cols = 12;
+  const rows = 6;
+
+  // Calculate total SVG dimensions
+  const svgWidth = cols * squareSize + (cols - 1) * gap;
+  const svgHeight = rows * squareSize + (rows - 1) * gap;
+
+  // Color scales to export
+  const scales = [
+    { name: 'Brand', data: currentThemeData.brand },
+    { name: 'Success', data: currentThemeData.success },
+    { name: 'Warning', data: currentThemeData.warning },
+    { name: 'Error', data: currentThemeData.error },
+    { name: 'Info', data: currentThemeData.info },
+    { name: 'Gray', data: currentThemeData.gray },
+  ];
+
+  // Start SVG
+  let svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+  <title>Fast UI Color Palette</title>
+`;
+
+  // Generate rectangles
+  scales.forEach((scale, rowIndex) => {
+    scale.data.scaleAlpha.forEach((color, colIndex) => {
+      const x = colIndex * (squareSize + gap);
+      const y = rowIndex * (squareSize + gap);
+      const stepNumber = colIndex + 1;
+      const name = `${scale.name}-${stepNumber}`;
+
+      svg += `  <rect id="${name}" x="${x}" y="${y}" width="${squareSize}" height="${squareSize}" fill="${color}">
+    <title>${name}: ${color}</title>
+  </rect>
+`;
+    });
+  });
+
+  svg += `</svg>`;
+
+  // Download SVG file
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fast-ui-palette-${currentTheme}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Export SVG button handler
+exportSvgBtn.addEventListener('click', exportSVG);
 
 // Generate default palette on load
 generate();
