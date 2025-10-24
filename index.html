@@ -191,6 +191,19 @@
       font-weight: 600;
     }
 
+    .scale-step-apca {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      background: var(--color-bg-pure, rgba(255,255,255,0.9));
+      color: var(--color-text-high, #000);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      font-family: 'Courier New', monospace;
+    }
+
     .scale-labels {
       display: grid;
       grid-template-columns: repeat(12, 1fr);
@@ -242,6 +255,65 @@
     .reset-btn:active {
       transform: rotate(-180deg) scale(0.95);
     }
+
+    /* Toggle Switch Styles */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--color-bg-active, #ccc);
+      transition: 0.3s;
+      border-radius: 24px;
+      border: 2px solid var(--color-border-ui, #ddd);
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--color-brand-solid, #3D63DD);
+      border-color: var(--color-brand-solid, #3D63DD);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    .toggle-slider:hover {
+      opacity: 0.9;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -266,6 +338,43 @@
           <input type="text" id="bgColorHex" value="#ffffff" pattern="^#[0-9A-Fa-f]{6}$">
           <button id="resetBgBtn" class="reset-btn" style="display: none;" title="Reset to default">↻</button>
         </div>
+      </div>
+      <div class="control-group">
+        <label style="font-weight: 600; min-width: 100px;">Variant:</label>
+        <div class="theme-toggle">
+          <button class="variant-btn active" data-variant="radix">Radix</button>
+          <button class="variant-btn" data-variant="oklch-hue">OKLCH Hue</button>
+        </div>
+      </div>
+      <div class="control-group" id="maxChromaControl" style="display: none;">
+        <label style="font-weight: 600; min-width: 100px;">Max Chroma:</label>
+        <label class="toggle-label">
+          <label class="toggle-switch">
+            <input type="checkbox" id="maxChromaToggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="color: var(--color-text-low); font-size: 0.9rem;">Use maximum saturation for all hues</span>
+        </label>
+      </div>
+      <div class="control-group" id="lockColorControl" style="display: none;">
+        <label style="font-weight: 600; min-width: 100px;">Lock Color:</label>
+        <label class="toggle-label">
+          <label class="toggle-switch">
+            <input type="checkbox" id="lockColorToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="color: var(--color-text-low); font-size: 0.9rem;">Use algorithm for step 9 (unchecked: all colors use base colors)</span>
+        </label>
+      </div>
+      <div class="control-group">
+        <label style="font-weight: 600; min-width: 100px;">Show APCA:</label>
+        <label class="toggle-label">
+          <label class="toggle-switch">
+            <input type="checkbox" id="showApcaToggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="color: var(--color-text-low); font-size: 0.9rem;">Display APCA contrast values on color steps</span>
+        </label>
       </div>
       <div class="control-group">
         <div class="theme-toggle">

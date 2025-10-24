@@ -2,7 +2,8 @@
  * Main UI Logic for Fast UI Color Generator
  */
 
-import { generateThemeColors } from './core/themeColorGenerator.js';
+import { generateThemeColorsV2 } from './core/themeColorGeneratorV2.js';
+import { APCAcontrast, sRGBtoY } from 'apca-w3';
 
 // DOM Elements
 const brandColorInput = document.getElementById('brandColorInput');
@@ -13,10 +14,20 @@ const resetBgBtn = document.getElementById('resetBgBtn');
 const output = document.getElementById('output');
 const scalesContainer = document.getElementById('scalesContainer');
 const themeBtns = document.querySelectorAll('.theme-btn');
+const variantBtns = document.querySelectorAll('.variant-btn');
+const maxChromaToggle = document.getElementById('maxChromaToggle');
+const maxChromaControl = document.getElementById('maxChromaControl');
+const lockColorToggle = document.getElementById('lockColorToggle');
+const lockColorControl = document.getElementById('lockColorControl');
+const showApcaToggle = document.getElementById('showApcaToggle');
 const copySvgBtn = document.getElementById('copySvgBtn');
 const exportSvgBtn = document.getElementById('exportSvgBtn');
 
 let currentTheme = 'light';
+let currentVariant = 'radix';
+let maxChroma = false;
+let lockColor = true;
+let showApca = false;
 let currentThemeData = null;
 
 // Default background colors
@@ -65,6 +76,44 @@ bgColorHex.addEventListener('input', (e) => {
   }
 });
 
+// Variant toggle
+variantBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    variantBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentVariant = btn.dataset.variant;
+
+    // Show/hide controls based on variant
+    if (currentVariant === 'oklch-hue') {
+      maxChromaControl.style.display = 'flex';
+      lockColorControl.style.display = 'flex';
+    } else {
+      maxChromaControl.style.display = 'none';
+      lockColorControl.style.display = 'none';
+    }
+
+    generate();
+  });
+});
+
+// Max chroma toggle
+maxChromaToggle.addEventListener('change', (e) => {
+  maxChroma = e.target.checked;
+  generate();
+});
+
+// Lock color toggle
+lockColorToggle.addEventListener('change', (e) => {
+  lockColor = e.target.checked;
+  generate();
+});
+
+// Show APCA toggle
+showApcaToggle.addEventListener('change', (e) => {
+  showApca = e.target.checked;
+  displayResults(currentThemeData);
+});
+
 // Theme toggle
 themeBtns.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -109,12 +158,13 @@ function generate() {
   const background = bgColorHex.value;
 
   try {
-    const theme = generateThemeColors({
+    const theme = generateThemeColorsV2({
+      variant: currentVariant,
       appearance: currentTheme,
-      accentColor: brandColor,  // accent = brand
-      brandColor: brandColor,   // brand = brand
-      grayColor: null,          // auto-generate gray
+      brandColor: brandColor,
       background,
+      maxChroma,
+      lockColor,
     });
 
     currentThemeData = theme;
@@ -138,12 +188,20 @@ function displayResults(theme) {
     'Gray': theme.gray,
   };
 
+  const background = bgColorHex.value;
+
   const allGrids = Object.entries(scales).map(([name, data]) => `
     <div class="scale-grid">
       ${data.scaleAlpha.map((color, index) => {
+        // Calculate APCA contrast for each color
+        const apcaValue = calculateAPCAContrast(color, background);
+        const apcaDisplay = apcaValue !== null ? `Lc ${apcaValue}` : 'N/A';
+        const apcaBadge = showApca ? `<span class="scale-step-apca">${apcaDisplay}</span>` : '';
+
         return `
         <div class="scale-step" style="background: ${color}" title="${color}">
           <span class="scale-step-number">${index + 1}</span>
+          ${apcaBadge}
         </div>
       `}).join('')}
     </div>
@@ -154,6 +212,53 @@ function displayResults(theme) {
       ${allGrids}
     </div>
   `;
+}
+
+/**
+ * Calculate APCA contrast between foreground and background colors
+ * @param {string} fgColor - Foreground color (hex)
+ * @param {string} bgColor - Background color (hex)
+ * @returns {number|null} APCA contrast value (Lc) or null if calculation fails
+ */
+function calculateAPCAContrast(fgColor, bgColor) {
+  try {
+    // Convert hex to RGB
+    const fgRgb = hexToRgb(fgColor);
+    const bgRgb = hexToRgb(bgColor);
+
+    if (!fgRgb || !bgRgb) return null;
+
+    // Convert RGB to Y (luminance) for APCA
+    const fgY = sRGBtoY([fgRgb.r, fgRgb.g, fgRgb.b]);
+    const bgY = sRGBtoY([bgRgb.r, bgRgb.g, bgRgb.b]);
+
+    // Calculate APCA contrast
+    const contrast = APCAcontrast(fgY, bgY);
+
+    // Round to integer
+    return Math.round(contrast);
+  } catch (error) {
+    console.error('APCA calculation error:', error);
+    return null;
+  }
+}
+
+/**
+ * Convert hex color to RGB object
+ * @param {string} hex - Hex color (e.g., "#ff0000" or "#ff0000ff")
+ * @returns {{r: number, g: number, b: number}|null}
+ */
+function hexToRgb(hex) {
+  // Remove alpha channel if present and normalize
+  const cleanHex = hex.replace(/^#/, '').substring(0, 6);
+
+  if (cleanHex.length !== 6) return null;
+
+  const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+  const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
+
+  return { r, g, b };
 }
 
 /**
@@ -224,19 +329,17 @@ function generateSVG() {
   const background = bgColorHex.value;
 
   // Generate both light and dark themes
-  const lightTheme = generateThemeColors({
+  const lightTheme = generateThemeColorsV2({
+    variant: currentVariant,
     appearance: 'light',
-    accentColor: brandColor,
     brandColor: brandColor,
-    grayColor: null,
     background: '#ffffff',
   });
 
-  const darkTheme = generateThemeColors({
+  const darkTheme = generateThemeColorsV2({
+    variant: currentVariant,
     appearance: 'dark',
-    accentColor: brandColor,
     brandColor: brandColor,
-    grayColor: null,
     background: '#111111',
   });
 
