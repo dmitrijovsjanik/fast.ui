@@ -9,6 +9,7 @@ const brandColorInput = document.getElementById('brandColorInput');
 const brandColorHex = document.getElementById('brandColorHex');
 const bgColorInput = document.getElementById('bgColorInput');
 const bgColorHex = document.getElementById('bgColorHex');
+const resetBgBtn = document.getElementById('resetBgBtn');
 const output = document.getElementById('output');
 const scalesContainer = document.getElementById('scalesContainer');
 const themeBtns = document.querySelectorAll('.theme-btn');
@@ -17,6 +18,18 @@ const exportSvgBtn = document.getElementById('exportSvgBtn');
 
 let currentTheme = 'light';
 let currentThemeData = null;
+
+// Default background colors
+const DEFAULT_BACKGROUNDS = {
+  light: '#ffffff',
+  dark: '#111111'
+};
+
+// Store custom background colors for each theme
+const customBackgrounds = {
+  light: null,  // null means using default
+  dark: null
+};
 
 // Sync brand color picker with text input and auto-generate
 brandColorInput.addEventListener('input', (e) => {
@@ -35,6 +48,9 @@ brandColorHex.addEventListener('input', (e) => {
 // Sync background color picker with text input and auto-generate
 bgColorInput.addEventListener('input', (e) => {
   bgColorHex.value = e.target.value.toUpperCase();
+  // Save custom background for current theme
+  customBackgrounds[currentTheme] = e.target.value.toUpperCase();
+  updateResetButtonVisibility();
   generate();
 });
 
@@ -42,6 +58,9 @@ bgColorHex.addEventListener('input', (e) => {
   const value = e.target.value;
   if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
     bgColorInput.value = value;
+    // Save custom background for current theme
+    customBackgrounds[currentTheme] = value.toUpperCase();
+    updateResetButtonVisibility();
     generate();
   }
 });
@@ -53,14 +72,37 @@ themeBtns.forEach(btn => {
     btn.classList.add('active');
     currentTheme = btn.dataset.theme;
 
-    // Update background color based on theme
-    const defaultBg = currentTheme === 'light' ? '#ffffff' : '#111111';
-    bgColorInput.value = defaultBg;
-    bgColorHex.value = defaultBg.toUpperCase();
+    // Use custom background if set, otherwise use default
+    const bg = customBackgrounds[currentTheme] || DEFAULT_BACKGROUNDS[currentTheme];
+    bgColorInput.value = bg;
+    bgColorHex.value = bg.toUpperCase();
 
+    updateResetButtonVisibility();
     generate();
   });
 });
+
+// Update reset button visibility based on whether background is custom
+function updateResetButtonVisibility() {
+  const currentBg = bgColorHex.value.toUpperCase();
+  const defaultBg = DEFAULT_BACKGROUNDS[currentTheme].toUpperCase();
+  const isCustom = currentBg !== defaultBg;
+
+  resetBgBtn.style.display = isCustom ? 'flex' : 'none';
+}
+
+// Reset background to default for current theme
+function resetBackground() {
+  const defaultBg = DEFAULT_BACKGROUNDS[currentTheme];
+  bgColorInput.value = defaultBg;
+  bgColorHex.value = defaultBg.toUpperCase();
+  customBackgrounds[currentTheme] = null;
+  updateResetButtonVisibility();
+  generate();
+}
+
+// Reset button handler
+resetBgBtn.addEventListener('click', resetBackground);
 
 function generate() {
   const brandColor = brandColorHex.value;

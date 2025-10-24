@@ -216,6 +216,32 @@
     label {
       color: var(--color-text-high, #333);
     }
+
+    .reset-btn {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      background: var(--color-bg-hover, #eee);
+      color: var(--color-text-high, #333);
+      border: 2px solid var(--color-border-ui, #ddd);
+      border-radius: 8px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reset-btn:hover {
+      background: var(--color-bg-active, #ddd);
+      border-color: var(--color-border-hover, #bbb);
+      transform: rotate(-180deg);
+    }
+
+    .reset-btn:active {
+      transform: rotate(-180deg) scale(0.95);
+    }
   </style>
 </head>
 <body>
@@ -238,6 +264,7 @@
         <div class="color-input-wrapper">
           <input type="color" id="bgColorInput" value="#ffffff">
           <input type="text" id="bgColorHex" value="#ffffff" pattern="^#[0-9A-Fa-f]{6}$">
+          <button id="resetBgBtn" class="reset-btn" style="display: none;" title="Reset to default">↻</button>
         </div>
       </div>
       <div class="control-group">
